@@ -22,7 +22,7 @@ CREATE TABLE TASKS (
     task_name VARCHAR(150) NOT NULL,
     task_descrip TEXT,
     task_story_points INTEGER DEFAULT 0 CHECK (task_story_points >= 0),
-    task_daliver_date DATE,
+    task_delivery_date DATE,
     task_status VARCHAR(20) DEFAULT 'Pendiente' CHECK (task_status IN ('Pendiente', 'En Progreso', 'En Revisión', 'Completado')),
     task_creator UUID NOT NULL REFERENCES USERS(user_id), -- Id del creador, relacion con la tabla USERS
     task_asign_to UUID NOT NULL REFERENCES USERS(user_id) -- Id del asignado, relacion con la tabla USERS
@@ -42,3 +42,29 @@ CREATE TABLE COMMENTS (
     comment_content TEXT NOT NULL, 
     comment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
+
+-- Datos precargados
+INSERT INTO USERS (user_name, user_mail, user_password) VALUES 
+('Juan', 'juan@example.com', '$2a$12$qJIATGaF626c2i/RLDmOSulxbEBYKS2OpfrYny7TF70FHGTtaPKfG'), -- Pass: Juan123
+('Jose', 'jose@example.com', '$2a$12$d7paRja6.mi0rwj8DacA/OxCc1N6HsG3mCp1B/9LzOhmza6ca54eC'); -- Pass: Jose123
+
+INSERT INTO CATEGORIES (category_name, category_descrip, category_color) VALUES
+('Personal', 'Vida cotidiana', '#4CAF50'),
+('Otro', 'Categoria variada', '#2196F3');
+
+INSERT INTO TASKS (task_name, task_descrip, task_story_points, task_delivery_date, task_status, task_creator, task_asign_to) VALUES
+('Limpieza', 'Limpiar muebles del hogar.', 5, '2026-02-23', 'Pendiente', 
+(SELECT user_id FROM USERS WHERE user_mail = 'juan@example.com'), 
+(SELECT user_id FROM USERS WHERE user_mail = 'jose@example.com')),
+('Estudiar', 'Estudiar para el examen de bases de datos.', 10, '2026-03-05', 'Pendiente', 
+(SELECT user_id FROM USERS WHERE user_mail = 'jose@example.com'), 
+(SELECT user_id FROM USERS WHERE user_mail = 'juan@example.com'));
+
+INSERT INTO TASK_CATEGORIES (task_id, category_id) VALUES
+((SELECT task_id FROM TASKS WHERE task_name = 'Limpieza'), (SELECT category_id FROM CATEGORIES WHERE category_name = 'Personal')),
+((SELECT task_id FROM TASKS WHERE task_name = 'Estudiar'), (SELECT category_id FROM CATEGORIES WHERE category_name = 'Otro')),
+((SELECT task_id FROM TASKS WHERE task_name = 'Estudiar'), (SELECT category_id FROM CATEGORIES WHERE category_name = 'Personal'));
+
+INSERT INTO COMMENTS (comment_from_task, comment_creator, comment_content) VALUES
+((SELECT task_id FROM TASKS WHERE task_name = 'Limpieza'), (SELECT user_id FROM USERS WHERE user_mail = 'juan@example.com'), 'Tener cuidado con la mesa de vidrio, es muy frágil.'),
+((SELECT task_id FROM TASKS WHERE task_name = 'Estudiar'), (SELECT user_id FROM USERS WHERE user_mail = 'jose@example.com'), 'No olvides repasar los temas del Modelo Entidad-Relación.');

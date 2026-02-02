@@ -32,7 +32,14 @@ La API permite gestionar tareas, usuarios y sus conexiones con una base de datos
    DB_PORT=5432
    ```
 
-3. **Ejecutar el proyecto:**
+3. **Inicializar la base de datos:**
+   ```bash
+   1. Iniciar el servidor de PostgreSQL.
+   2. Crear la base de datos llamada "todo-list".
+   3. Ejecutar el script init.sql.
+   ```
+
+4. **Ejecutar el proyecto:**
    ```bash
    # Modo desarrollo
    npm run start:dev
