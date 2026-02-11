@@ -1,4 +1,4 @@
-import { Injectable, Inject, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,14 +28,14 @@ export class UsersService {
     }
   }
 
-  // BUSCAR PARA LOGIN (Necesitamos la contraseña para comparar)
+  // Buscar usuario por email para el login
   async findByEmailForAuth(email: string) {
     const query = 'SELECT * FROM USERS WHERE user_mail = $1';
     const res = await this.pool.query(query, [email]);
     return res.rows[0]; 
   }
    
-  // BUSCAR POR ID (Para ver perfil o validar sesión)
+  // Buscar usuarios por ID
   async findOne(id: string) {
     const query = 'SELECT user_id, user_name, user_mail FROM USERS WHERE user_id = $1';
     const res = await this.pool.query(query, [id]);
@@ -46,18 +46,52 @@ export class UsersService {
     return res.rows[0];
   }
 
-  async findAll() {
-    const query = 'SELECT user_id, user_name, user_mail FROM USERS';
-    const res = await this.pool.query(query);
+  // Funcion para actualizar parcialmente a un usuario
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let index = 1;
 
-    return res.rows;
-  }catch ( error){
-    throw new InternalServerErrorException('Error al obtener usuarios');
+  // Recorremos el DTO filtrado (solo name y mail)
+  for (const [key, value] of Object.entries(updateUserDto)) {
+    if (value !== undefined && value !== null) {
+      fields.push(`${key} = $${index}`);
+      values.push(value);
+      index++;
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  // Si el body llegó vacío {}
+  if (fields.length === 0) {
+    throw new BadRequestException('Debe proporcionar al menos un campo para actualizar (nombre o email)');
   }
+
+  // Añadimos el ID al final para la cláusula WHERE
+  values.push(id);
+  
+  const query = `
+    UPDATE USERS 
+    SET ${fields.join(', ')} 
+    WHERE user_id = $${index} 
+    RETURNING user_id, user_name, user_mail;
+  `;
+
+  try {
+    const res = await this.pool.query(query, values);
+    
+    if (res.rows.length === 0) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return res.rows[0];
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ConflictException('El correo ya está registrado por otro usuario');
+    }
+    throw new InternalServerErrorException('Error al actualizar el usuario');
+  }
+}
+
 
   remove(id: number) {
     return `This action removes a #${id} user`;
