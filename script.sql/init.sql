@@ -56,8 +56,8 @@ INSERT INTO USERS (user_name, user_mail, user_password) VALUES
 ('Jose', 'jose@example.com', '$2a$12$d7paRja6.mi0rwj8DacA/OxCc1N6HsG3mCp1B/9LzOhmza6ca54eC'); -- Pass: Jose123
 
 INSERT INTO CATEGORIES (category_name, category_descrip, category_color) VALUES
-('Personal', 'Vida cotidiana', '#4CAF50'),
-('Otro', 'Categoria variada', '#2196F3');
+('Personal', 'Vida cotidiana', '4CAF50'),
+('Otro', 'Categoria variada', '2196F3');
 
 INSERT INTO TASKS (task_name, task_descrip, task_story_points, task_delivery_date, task_status, task_creator, task_asign_to) VALUES
 ('Limpieza', 'Limpiar muebles del hogar.', 5, '2026-02-23', 'Pendiente', 
