@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { CategoriesModule } from './categories/categories.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Global()
 @Module({
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
     CategoriesModule,
     UsersModule,
     AuthModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [
