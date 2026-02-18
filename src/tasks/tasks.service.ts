@@ -71,9 +71,33 @@ export class TasksService {
   // Método para obtener todas las tareas
   async findAll(status?: string, assignedTo?: string, creatorId?: string) {
     let query = `
-      SELECT t.*, u.user_name as assigned_user_name
+      SELECT 
+        t.*, 
+        u.user_name as assigned_user_name,
+        u_creator.user_name as creator_user_name,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'category_id', cat.category_id,
+            'category_name', cat.category_name
+          ))
+           FROM task_categories tc
+           JOIN categories cat ON tc.category_id = cat.category_id
+           WHERE tc.task_id = t.task_id
+          ), '[]'
+        ) as categories,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'comment_id', com.comment_id,
+            'comment_content', com.comment_content
+          ))
+           FROM comments com
+           LEFT JOIN users u_com ON com.comment_creator = u_com.user_id
+           WHERE com.comment_from_task = t.task_id
+          ), '[]'
+        ) as comments
       FROM tasks t
       LEFT JOIN users u ON t.task_asign_to = u.user_id
+      LEFT JOIN users u_creator ON t.task_creator = u_creator.user_id
       WHERE 1=1
     `;
     const values: any[] = [];
@@ -105,8 +129,33 @@ export class TasksService {
   // Metodo para encontrar una tarea por su ID
   async findOne(id: string) {
     const query = `
-      SELECT t.*
+      SELECT 
+        t.*,
+        u_creator.user_name as creator_name,
+        u_assign.user_name as assigned_to_name,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'category_id', cat.category_id,
+            'category_name', cat.category_name
+          ))
+           FROM task_categories tc
+           JOIN categories cat ON tc.category_id = cat.category_id
+           WHERE tc.task_id = t.task_id
+          ), '[]'
+        ) as categories,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'comment_id', com.comment_id,
+            'comment_content', com.comment_content
+          ))
+           FROM comments com
+           LEFT JOIN users u_com ON com.comment_creator = u_com.user_id
+           WHERE com.comment_from_task = t.task_id
+          ), '[]'
+        ) as comments
       FROM tasks t
+      LEFT JOIN users u_creator ON t.task_creator = u_creator.user_id
+      LEFT JOIN users u_assign ON t.task_asign_to = u_assign.user_id
       WHERE t.task_id = $1;
     `;
     const result = await this.pool.query(query, [id]);

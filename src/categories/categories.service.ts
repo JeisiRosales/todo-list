@@ -9,8 +9,11 @@ export class CategoriesService {
 
   // Método para crear una nueva categoría
   async create(createCategoryDto: CreateCategoryDto) {
-    const { category_name, category_descrip, category_color } =
-      createCategoryDto;
+    const {
+      category_name,
+      category_descrip,
+      category_color
+    } = createCategoryDto;
 
     const query = `
       INSERT INTO CATEGORIES(category_name, category_descrip, category_color)
@@ -53,7 +56,18 @@ export class CategoriesService {
       );
     `;
     const result = await this.pool.query(query, [id]);
-    return result.rows;
+
+    if (result.rows.length === 0) {
+      return {
+        message: 'Todas las categorías ya están asociadas a esta tarea',
+        data: []
+      };
+    }
+
+    return {
+      message: 'Categorias no asociadas a la tarea',
+      data: result.rows
+    };
   }
 
   // Método para actualizar una categoría existente
@@ -104,6 +118,9 @@ export class CategoriesService {
     if (result.rows.length === 0) {
       throw new NotFoundException(`Categoria con id ${id} no encontrada`);
     }
-    return result.rows[0];
+    return {
+      message: 'Categoria eliminada exitosamente',
+      data: result.rows[0]
+    }
   }
 }
