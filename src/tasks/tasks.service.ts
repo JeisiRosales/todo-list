@@ -5,50 +5,71 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class TasksService {
-  constructor(@Inject('DATABASE_POOL') private pool: Pool) {}
-    async create(createTaskDto: CreateTaskDto, creatorId: string) { // Cambiado a string por el UUID
-      const { 
+  constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+
+  // Método para crear una nueva tarea
+  async create(createTaskDto: CreateTaskDto, creatorId: string) {
+    const {
+      task_name,
+      task_descrip,
+      task_story_points,
+      task_delivery_date,
+      task_asign_to
+    } = createTaskDto;
+
+    if (task_story_points !== undefined && task_story_points < 0) {
+      throw new BadRequestException('Los story points no pueden ser negativos');
+    }
+
+    const query = `
+      INSERT INTO tasks (
         task_name, 
         task_descrip, 
         task_story_points, 
         task_delivery_date, 
-        task_asign_to 
-      } = createTaskDto;
+        task_creator, 
+        task_asign_to, 
+        task_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'Pendiente')
+      RETURNING *;
+    `;
 
-      if (task_story_points !== undefined && task_story_points < 0) {
-        throw new BadRequestException('Los story points no pueden ser negativos');
-      }
+    const values = [
+      task_name,
+      task_descrip || null,
+      task_story_points || 0,
+      task_delivery_date || null,
+      creatorId,
+      task_asign_to
+    ];
 
-      const query = `
-        INSERT INTO tasks (
-          task_name, 
-          task_descrip, 
-          task_story_points, 
-          task_delivery_date, 
-          task_creator, 
-          task_asign_to, 
-          task_status
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'Pendiente')
+    const result = await this.pool.query(query, values);
+
+    return {
+      message: `Tarea creada exitosamente por el usuario ID: ${creatorId}`,
+      data: result.rows[0],
+    };
+  }
+
+  // Método para asociar una categoría a una tarea
+  async associateCategories(taskId: string, categoryIds: string[]) {
+    const query = `
+        INSERT INTO task_categories (task_id, category_id)
+        SELECT $1, unnest($2::uuid[])
+        ON CONFLICT DO NOTHING
         RETURNING *;
       `;
 
-      const values = [
-        task_name, 
-        task_descrip || null, 
-        task_story_points || 0, 
-        task_delivery_date || null, 
-        creatorId, 
-        task_asign_to
-      ];
+    const result = await this.pool.query(query, [taskId, categoryIds]);
 
-      const result = await this.pool.query(query, values);
-
-      return {
-      message: `Tarea creada exitosamente por el usuario ID: ${creatorId}`,
-      }; 
+    return {
+      message: 'Categorías asociadas a la tarea exitosamente',
+      data: result.rows,
+    };
   }
 
-  async findAll(status?: string, assignedTo?: string) {
+  // Método para obtener todas las tareas
+  async findAll(status?: string, assignedTo?: string, creatorId?: string) {
     let query = `
       SELECT t.*, u.user_name as assigned_user_name
       FROM tasks t
@@ -63,6 +84,12 @@ export class TasksService {
       query += ` AND t.task_status = $${values.length}`;
     }
 
+    // Filtro por Usuario Creador
+    if (creatorId) {
+      values.push(creatorId);
+      query += ` AND t.task_creator = $${values.length}`;
+    }
+
     // Filtro por Usuario Asignado
     if (assignedTo) {
       values.push(assignedTo);
@@ -75,19 +102,30 @@ export class TasksService {
     return result.rows;
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} task`;
+  // Metodo para encontrar una tarea por su ID
+  async findOne(id: string) {
+    const query = `
+      SELECT t.*
+      FROM tasks t
+      WHERE t.task_id = $1;
+    `;
+    const result = await this.pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      throw new NotFoundException(`No se encontró la tarea con ID: ${id}`);
+    }
+    return result.rows[0];
   }
 
+  // Metodo para actualizar una tarea
   async update(id: string, updateTaskDto: UpdateTaskDto) {
     // Extraemos solo los campos que el proyecto permite editar
-    const { 
-      task_name, 
-      task_descrip, 
-      task_story_points, 
-      task_delivery_date, 
-      task_status, 
-      task_asign_to 
+    const {
+      task_name,
+      task_descrip,
+      task_story_points,
+      task_delivery_date,
+      task_status,
+      task_asign_to
     } = updateTaskDto as any;
 
     // Validación de Story Points
@@ -109,12 +147,12 @@ export class TasksService {
     `;
 
     const values = [
-      task_name ?? null, 
-      task_descrip ?? null, 
-      task_story_points ?? null, 
-      task_delivery_date ?? null, 
-      task_status ?? null, 
-      task_asign_to ?? null, 
+      task_name ?? null,
+      task_descrip ?? null,
+      task_story_points ?? null,
+      task_delivery_date ?? null,
+      task_status ?? null,
+      task_asign_to ?? null,
       id
     ];
 
@@ -130,24 +168,20 @@ export class TasksService {
     };
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} task`;
-  }
-  
-  async associateCategory(taskId: string, categoryId: string) {
-  try {
+  // Metodo para eliminar una tarea
+  async remove(id: string) {
     const query = `
-      INSERT INTO task_categories (task_id, category_id)
-      VALUES ($1, $2)
+      DELETE FROM tasks 
+      WHERE task_id = $1
       RETURNING *;
     `;
-    const result = await this.pool.query(query, [taskId, categoryId]);
-    
+    const result = await this.pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      throw new NotFoundException(`No se encontró la tarea con ID: ${id}`);
+    }
     return {
-      message: 'Categoría asociada a la tarea exitosamente',
+      message: 'Tarea eliminada correctamente',
+      data: result.rows[0]
     };
-  } catch (error) {
-    throw new BadRequestException('No se pudo asociar la categoría. Verifique que los IDs existan o que no estén ya asociados.');
   }
-}
 }

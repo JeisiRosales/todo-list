@@ -8,27 +8,28 @@ import { AuthGuard } from '@nestjs/passport';
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
+  // Metodo para crear un usuario
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
+  // Metodo para encontrar un usuario por su ID
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
+  // Metodo para actualizar un usuario
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto
-  ) {
-    // Retornamos el resultado del servicio (el usuario actualizado)
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return await this.usersService.update(id, updateUserDto);
   }
 
+  // Metodo para eliminar un usuario
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: string) {

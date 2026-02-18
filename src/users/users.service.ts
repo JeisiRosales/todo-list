@@ -92,7 +92,6 @@ export class UsersService {
     }
   }
 
-
   // Eliminar un usuario por ID
   async remove(id: string) {
     const query = `
@@ -120,12 +119,10 @@ export class UsersService {
         throw error;
       }
 
-      // Capturamos violación de llave foránea (ej. el usuario tiene tareas asociadas)
+      // Capturamos violación de llave foránea
       if (error?.code === '23503') {
         throw new ConflictException('No se puede eliminar el usuario porque tiene tareas o datos asociados.');
       }
-
-      console.error(error); // Para ver el error real en consola del servidor
       throw new InternalServerErrorException('Error al eliminar usuario');
     }
   }

@@ -30,7 +30,7 @@ CREATE TABLE TASKS (
     task_descrip TEXT,
     task_story_points INTEGER DEFAULT 0 CHECK (task_story_points >= 0),
     task_delivery_date DATE,
-    task_status VARCHAR(20) DEFAULT 'Pendiente' CHECK (task_status IN ('Pendiente', 'En Progreso', 'En Revisión', 'Completado')),
+    task_status VARCHAR(20) DEFAULT 'Pendiente' CHECK (task_status IN ('Pendiente', 'En-Progreso', 'En-Revision', 'Completado')),
     task_creator UUID NOT NULL REFERENCES USERS(user_id), -- Id del creador, relacion con la tabla USERS
     task_asign_to UUID NOT NULL REFERENCES USERS(user_id) -- Id del asignado, relacion con la tabla USERS
 );

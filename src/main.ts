@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { DatabaseExceptionFilter } from './common/filters/database-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,9 @@ async function bootstrap() {
     forbidNonWhitelisted: true, // Lanza error si envían propiedades no permitidas
     transform: true,            // Transforma los datos de los payloads a los tipos del DTO
   }));
+
+  // Filtro Global de Excepciones de Base de Datos
+  app.useGlobalFilters(new DatabaseExceptionFilter());
 
   // Configuración de Swagger
   const config = new DocumentBuilder()

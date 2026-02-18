@@ -27,6 +27,12 @@ export class CategoriesController {
     return this.categoriesService.findOne(id);
   }
 
+  // Obetener categorias no asociadas a una determinada tarea
+  @Get(':id/not-associated')
+  findNotAssociated(@Param('id') id: string) {
+    return this.categoriesService.findNotAssociated(id);
+  }
+
   // Actualizar una categoria por id
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {

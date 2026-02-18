@@ -1,7 +1,8 @@
-import { IsUUID, IsNotEmpty } from 'class-validator';
+import { IsUUID, IsNotEmpty, IsArray } from 'class-validator';
 
 export class AssociateCategoryDto {
-  @IsUUID()
+  @IsArray()
   @IsNotEmpty()
-  categoryId: string;
+  @IsUUID('all', { each: true })
+  categoryIds: string[];
 }
