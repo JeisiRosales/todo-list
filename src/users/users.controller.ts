@@ -9,7 +9,6 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   // Metodo para crear un usuario
-  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
